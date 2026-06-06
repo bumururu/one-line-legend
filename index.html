@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>One-Line Legend ✏️</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Fredoka', 'Comic Sans MS', sans-serif;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #ffe5f1 0%, #e5f0ff 50%, #e8ffe5 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    transition: background 1s;
+  }
+
+  body.disco { animation: discoBg 4s infinite; }
+  @keyframes discoBg {
+    0%   { background: linear-gradient(135deg, #ffe5f1, #e5f0ff); }
+    25%  { background: linear-gradient(135deg, #fff3d6, #ffe5f1); }
+    50%  { background: linear-gradient(135deg, #e8ffe5, #fff3d6); }
+    75%  { background: linear-gradient(135deg, #e5f0ff, #e8ffe5); }
+    100% { background: linear-gradient(135deg, #ffe5f1, #e5f0ff); }
+  }
+
+  .card {
+    background: rgba(255,255,255,0.92);
+    border-radius: 32px;
+    box-shadow: 0 12px 40px rgba(180,140,255,0.25);
+    padding: 36px;
+    max-width: 520px;
+    width: 92vw;
+    text-align: center;
+    position: relative;
+    z-index: 10;
+  }
+
+  .card.wobbling { animation: wobble 0.7s infinite; }
+  @keyframes wobble {
+    0%,100% { transform: rotate(-0.7deg); }
+    50%     { transform: rotate(0.7deg); }
+  }
+
+  h1 {
+    font-size: 2.4rem;
+    font-weight: 700;
+    background: linear-gradient(90deg, #ff6b9d, #ffa94d, #69db7c, #4dabf7, #b197fc);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+  }
+
+  h2 { color: #7048b6; margin-bottom: 12px; font-size: 1.5rem; }
+  p  { color: #6b6b8a; font-size: 1.05rem; line-height: 1.5; }
+
+  .big-btn {
+    font-family: inherit;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: white;
+    background: linear-gradient(90deg, #ff6b9d, #b197fc);
+    border: none;
+    border-radius: 999px;
+    padding: 14px 42px;
+    margin-top: 22px;
+    cursor: pointer;
+    box-shadow: 0 6px 0 #d45a8a;
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  .big-btn:hover  { transform: translateY(-2px); }
+  .big-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #d45a8a; }
+
+  .small-btn {
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #7048b6;
+    background: #f0e8ff;
+    border: 2px solid #d8c6ff;
+    border-radius: 999px;
+    padding: 8px 20px;
+    cursor: pointer;
+    margin: 6px 4px 0;
+  }
+  .small-btn:hover { background: #e4d6ff; }
+
+  .hidden { display: none !important; }
+
+  /* ---------- quiz ---------- */
+  .progress-dots { display: flex; gap: 10px; justify-content: center; margin-bottom: 18px; }
+  .dot {
+    width: 16px; height: 16px; border-radius: 50%;
+    background: #eee5ff; border: 2px solid #d8c6ff;
+    transition: all 0.3s;
+  }
+  .dot.right { background: #69db7c; border-color: #4cae60; transform: scale(1.15); }
+  .dot.wrong { background: #ff8fab; border-color: #e36487; transform: scale(1.15); }
+
+  .question { font-size: 2rem; color: #444; font-weight: 600; margin: 18px 0 24px; }
+
+  .answers { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .answer-btn {
+    font-family: inherit;
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #5a4a7a;
+    background: #f6f1ff;
+    border: 3px solid #d8c6ff;
+    border-radius: 20px;
+    padding: 16px;
+    cursor: pointer;
+    transition: transform 0.1s, background 0.2s;
+  }
+  .answer-btn:hover { transform: scale(1.04); background: #ece2ff; }
+  .answer-btn.correct { background: #d3f9d8; border-color: #69db7c; }
+  .answer-btn.incorrect { background: #ffe0e9; border-color: #ff8fab; animation: shake 0.4s; }
+  .answer-btn:disabled { cursor: default; }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-7px); }
+    75% { transform: translateX(7px); }
+  }
+
+  /* ---------- play ---------- */
+  #levelTitle { font-size: 1.3rem; color: #7048b6; font-weight: 600; }
+  #levelSub   { font-size: 0.95rem; color: #9a8fb8; margin-bottom: 8px; }
+
+  svg { width: 100%; max-width: 420px; height: auto; touch-action: manipulation; }
+
+  .edge-ghost {
+    stroke: #ddd2f5;
+    stroke-width: 5;
+    stroke-linecap: round;
+    stroke-dasharray: 2 12;
+  }
+  .edge-drawn {
+    stroke-width: 9;
+    stroke-linecap: round;
+    filter: drop-shadow(0 2px 2px rgba(0,0,0,0.12));
+  }
+  .node-circle {
+    fill: white;
+    stroke: #b197fc;
+    stroke-width: 4;
+    cursor: pointer;
+    transition: r 0.15s;
+  }
+  .node-hit { fill: transparent; cursor: pointer; }
+  .node-circle.active {
+    stroke: #ff6b9d;
+    animation: pulse 0.9s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { stroke-width: 4; }
+    50%     { stroke-width: 8; }
+  }
+
+  .level-dots { display: flex; gap: 8px; justify-content: center; margin-top: 10px; }
+  .level-dots .dot.done { background: #ffd43b; border-color: #f0b400; }
+
+  /* ---------- distractions ---------- */
+  .floaty {
+    position: fixed;
+    font-size: 2.2rem;
+    pointer-events: none;
+    z-index: 50;
+    animation: floatAround linear infinite;
+  }
+  @keyframes floatAround {
+    0%   { transform: translate(0, 0) rotate(0deg); }
+    25%  { transform: translate(40vw, 20vh) rotate(90deg); }
+    50%  { transform: translate(-10vw, 45vh) rotate(180deg); }
+    75%  { transform: translate(30vw, -15vh) rotate(270deg); }
+    100% { transform: translate(0, 0) rotate(360deg); }
+  }
+
+  .bubble {
+    position: fixed;
+    background: white;
+    border: 3px solid #ffb3c9;
+    border-radius: 20px;
+    padding: 10px 18px;
+    font-weight: 600;
+    color: #e36487;
+    font-size: 1.05rem;
+    z-index: 60;
+    pointer-events: none;
+    box-shadow: 0 4px 12px rgba(255,107,157,0.3);
+    animation: popIn 0.3s;
+  }
+  @keyframes popIn {
+    from { transform: scale(0); }
+    to   { transform: scale(1); }
+  }
+
+  #fakeCursor {
+    position: fixed;
+    font-size: 2rem;
+    z-index: 70;
+    pointer-events: none;
+    transition: top 1.2s ease-in-out, left 1.2s ease-in-out;
+  }
+
+  /* ---------- confetti ---------- */
+  .confetti {
+    position: fixed;
+    width: 12px; height: 12px;
+    z-index: 100;
+    pointer-events: none;
+    border-radius: 3px;
+    animation: confettiFall linear forwards;
+  }
+  @keyframes confettiFall {
+    to { transform: translateY(110vh) rotate(720deg); }
+  }
+
+  .stars { font-size: 2.6rem; letter-spacing: 6px; margin: 10px 0; }
+
+  .distraction-meter {
+    background: #f6f1ff;
+    border-radius: 16px;
+    padding: 14px;
+    margin: 16px 0;
+    font-weight: 600;
+    color: #7048b6;
+    font-size: 1.1rem;
+  }
+</style>
+</head>
+<body>
+
+  <!-- floating distractions get added to body by JS -->
+
+  <div class="card" id="card">
+
+    <!-- START SCREEN -->
+    <div id="screen-start">
+      <h1>One-Line Legend ✏️</h1>
+      <p style="margin-bottom:6px;">A game by <strong>Eli</strong></p>
+      <p>First: <strong>5 maths questions</strong>.<br>
+      Every one you get right makes the screen calmer.<br>
+      Every one you get wrong unleashes <strong>chaos</strong>. 🦄🍭🎈</p>
+      <p style="margin-top:10px;">Then: draw each shape in <strong>ONE line</strong> —<br>
+      no lifting off, no going over a line twice!</p>
+      <p style="margin-top:10px;">🎲 The machine invents <strong>brand-new shapes</strong><br>every single game. No two games are the same!</p>
+      <button class="big-btn" onclick="startQuiz()">Let's Go!</button>
+    </div>
+
+    <!-- QUIZ SCREEN -->
+    <div id="screen-quiz" class="hidden">
+      <div class="progress-dots" id="quizDots"></div>
+      <h2>Brain Power Check 🧠</h2>
+      <div class="question" id="questionText"></div>
+      <div class="answers" id="answerBox"></div>
+    </div>
+
+    <!-- QUIZ RESULTS SCREEN -->
+    <div id="screen-results" class="hidden">
+      <h2 id="resultsTitle"></h2>
+      <div class="stars" id="resultsStars"></div>
+      <div class="distraction-meter" id="distractionMeter"></div>
+      <button class="big-btn" onclick="startPlay()">Start Drawing!</button>
+    </div>
+
+    <!-- PLAY SCREEN -->
+    <div id="screen-play" class="hidden">
+      <div id="levelTitle"></div>
+      <div id="levelSub">Tap a dot to start, then tap dot-to-dot. Use every line!</div>
+      <svg id="board" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div class="level-dots" id="levelDots"></div>
+      <div>
+        <button class="small-btn" onclick="resetLevel()">↺ Restart shape</button>
+        <button class="small-btn" onclick="showHint()">💡 Hint</button>
+      </div>
+      <p id="hintText" class="hidden" style="margin-top:10px; font-size:0.95rem;"></p>
+    </div>
+
+    <!-- WIN SCREEN -->
+    <div id="screen-win" class="hidden">
+      <h1>YOU'RE A ONE-LINE LEGEND! 🏆</h1>
+      <div class="stars">🌟🌟🌟🌟🌟</div>
+      <p id="winText"></p>
+      <button class="big-btn" onclick="location.reload()">Play Again</button>
+    </div>
+
+  </div>
+
+<script>
+'use strict';
+
+/* ================= SOUNDS (no files needed) ================= */
+let audioCtx = null;
+function sound(freq, dur, type, slideTo) {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = type || 'sine';
+    o.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, audioCtx.currentTime + dur);
+    g.gain.setValueAtTime(0.12, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime + dur);
+  } catch (e) { /* sound is optional */ }
+}
+const sClick = () => sound(660, 0.08, 'sine');
+const sGood  = () => { sound(523, 0.12); setTimeout(() => sound(659, 0.12), 90); setTimeout(() => sound(784, 0.2), 180); };
+const sBad   = () => sound(220, 0.35, 'sawtooth', 110);
+const sBoing = () => sound(300, 0.25, 'triangle', 150);
+const sWin   = () => [523,587,659,784,1047].forEach((f,i) => setTimeout(() => sound(f, 0.18), i*110));
+
+/* ================= MATHS QUIZ ================= */
+const QUESTION_POOL = [
+  { q: '7 × 8',            a: '56', opts: ['54', '56', '63', '48'] },
+  { q: '45 + 38',          a: '83', opts: ['83', '73', '85', '82'] },
+  { q: 'Half of 76',       a: '38', opts: ['36', '34', '38', '43'] },
+  { q: '25% of 80',        a: '20', opts: ['25', '15', '40', '20'] },
+  { q: '¾ of 24',          a: '18', opts: ['16', '18', '12', '20'] },
+  { q: '9 × 9',            a: '81', opts: ['81', '72', '99', '89'] },
+  { q: '100 − 47',         a: '53', opts: ['57', '63', '53', '43'] },
+  { q: '6 × 12',           a: '72', opts: ['62', '76', '66', '72'] },
+  { q: '⅓ of 27',          a: '9',  opts: ['9', '8', '7', '13'] },
+  { q: '144 ÷ 12',         a: '12', opts: ['11', '12', '14', '24'] },
+  { q: 'Double 47',        a: '94', opts: ['84', '97', '94', '88'] },
+  { q: '10% of 250',       a: '25', opts: ['20', '25', '50', '2.5'] },
+  { q: '8 × 7 − 6',        a: '50', opts: ['50', '48', '56', '62'] },
+  { q: '5 × ? = 45',       a: '9',  opts: ['8', '9', '7', '40'] },
+];
+
+const NUM_QUESTIONS = 5;
+let quizQuestions = [];
+let quizIndex = 0;
+let wrongCount = 0;
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function show(id) {
+  ['screen-start','screen-quiz','screen-results','screen-play','screen-win']
+    .forEach(s => document.getElementById(s).classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+}
+
+function startQuiz() {
+  sClick();
+  quizQuestions = shuffle(QUESTION_POOL).slice(0, NUM_QUESTIONS);
+  quizIndex = 0;
+  wrongCount = 0;
+  const dots = document.getElementById('quizDots');
+  dots.innerHTML = '';
+  for (let i = 0; i < NUM_QUESTIONS; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot';
+    d.id = 'qdot' + i;
+    dots.appendChild(d);
+  }
+  show('screen-quiz');
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const item = quizQuestions[quizIndex];
+  document.getElementById('questionText').textContent = item.q + ' = ?';
+  const box = document.getElementById('answerBox');
+  box.innerHTML = '';
+  shuffle(item.opts).forEach(opt => {
+    const b = document.createElement('button');
+    b.className = 'answer-btn';
+    b.textContent = opt;
+    b.onclick = () => answer(b, opt, item.a);
+    box.appendChild(b);
+  });
+}
+
+function answer(btn, chosen, correct) {
+  document.querySelectorAll('.answer-btn').forEach(b => b.disabled = true);
+  const dot = document.getElementById('qdot' + quizIndex);
+  if (chosen === correct) {
+    btn.classList.add('correct');
+    dot.classList.add('right');
+    sGood();
+    miniConfetti(btn);
+  } else {
+    btn.classList.add('incorrect');
+    dot.classList.add('wrong');
+    wrongCount++;
+    sBad();
+    document.querySelectorAll('.answer-btn').forEach(b => {
+      if (b.textContent === correct) b.classList.add('correct');
+    });
+  }
+  quizIndex++;
+  setTimeout(() => {
+    if (quizIndex < NUM_QUESTIONS) renderQuestion();
+    else showResults();
+  }, 1100);
+}
+
+const CHAOS_LEVELS = [
+  { name: 'ZEN MODE 🧘',          desc: 'Perfect score! Your screen will be completely calm.' },
+  { name: 'A Little Fluttery 🦋', desc: 'One wrong... a few visitors will float by.' },
+  { name: 'Quite Busy 🎈',        desc: 'Two wrong... it’s getting crowded in here.' },
+  { name: 'Distraction Central 🍭', desc: 'Three wrong... good luck concentrating!' },
+  { name: 'Total Mayhem 🌪️',      desc: 'Four wrong... the screen is having a party without you.' },
+  { name: 'ABSOLUTE CHAOS 🤯',    desc: 'All five wrong?! The screen is now your enemy.' },
+];
+
+function showResults() {
+  const right = NUM_QUESTIONS - wrongCount;
+  const level = CHAOS_LEVELS[wrongCount];
+  document.getElementById('resultsTitle').textContent =
+    right === 5 ? 'Maths Genius!' : right >= 3 ? 'Nice Work!' : 'Uh Oh...';
+  document.getElementById('resultsStars').textContent =
+    '⭐'.repeat(right) + '🌑'.repeat(wrongCount);
+  document.getElementById('distractionMeter').innerHTML =
+    'Distraction level: <br><span style="font-size:1.4rem;">' + level.name + '</span><br>' +
+    '<span style="font-weight:400; font-size:0.95rem;">' + level.desc + '</span>';
+  show('screen-results');
+}
+
+/* ================= DISTRACTIONS ================= */
+const EMOJIS = ['🦄','🌈','🍭','🧁','🐱','🐶','⭐','🍩','🎈','🦋','🐸','🍓','🐙','🌸'];
+const BUBBLE_LINES = ['Look at me!','Hiii! 👋','Ooh, a butterfly!','Don’t mess up!','Boop!','Over here!!','Is that a dog? 🐶','Wheeee!','You missed a spot!','La la la 🎵'];
+let bubbleTimer = null;
+let cursorTimer = null;
+
+function spawnFloaty(speedSec) {
+  const f = document.createElement('div');
+  f.className = 'floaty';
+  f.textContent = EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
+  f.style.left = Math.random() * 90 + 'vw';
+  f.style.top = Math.random() * 90 + 'vh';
+  f.style.animationDuration = speedSec + Math.random() * 6 + 's';
+  document.body.appendChild(f);
+}
+
+function spawnBubble() {
+  const b = document.createElement('div');
+  b.className = 'bubble';
+  b.textContent = BUBBLE_LINES[Math.floor(Math.random() * BUBBLE_LINES.length)];
+  b.style.left = (10 + Math.random() * 70) + 'vw';
+  b.style.top = (10 + Math.random() * 75) + 'vh';
+  document.body.appendChild(b);
+  setTimeout(() => b.remove(), 2200);
+}
+
+function startFakeCursor() {
+  const c = document.createElement('div');
+  c.id = 'fakeCursor';
+  c.textContent = '🐝';
+  c.style.left = '50vw'; c.style.top = '50vh';
+  document.body.appendChild(c);
+  cursorTimer = setInterval(() => {
+    c.style.left = Math.random() * 90 + 'vw';
+    c.style.top = Math.random() * 90 + 'vh';
+  }, 1300);
+}
+
+function applyDistractions() {
+  // wrongCount: 0 = nothing ... 5 = everything
+  if (wrongCount >= 1) for (let i = 0; i < 4; i++) spawnFloaty(14);
+  if (wrongCount >= 2) for (let i = 0; i < 8; i++) spawnFloaty(9);
+  if (wrongCount >= 3) {
+    startFakeCursor();
+    bubbleTimer = setInterval(spawnBubble, 2600);
+  }
+  if (wrongCount >= 4) {
+    document.body.classList.add('disco');
+    for (let i = 0; i < 10; i++) spawnFloaty(5);
+  }
+  if (wrongCount >= 5) {
+    document.getElementById('card').classList.add('wobbling');
+    for (let i = 0; i < 12; i++) spawnFloaty(3);
+    setInterval(spawnBubble, 1400);
+  }
+}
+
+/* ================= THE SHAPE-INVENTING MACHINE =================
+   Every game, 5 brand-new shapes are invented from scratch.
+   Each one is a graph: dots (nodes) + lines (edges), and the
+   machine guarantees each is drawable in ONE stroke.
+   (Secret maths: a shape works when 0 or 2 dots have an odd
+    number of lines — that's called an Euler path!)              */
+
+function dist(a, b) { return Math.hypot(a[0] - b[0], a[1] - b[1]); }
+
+function pointSegDist(p, a, b) {
+  const vx = b[0] - a[0], vy = b[1] - a[1];
+  const wx = p[0] - a[0], wy = p[1] - a[1];
+  const len2 = vx * vx + vy * vy;
+  let t = len2 ? (wx * vx + wy * vy) / len2 : 0;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(p[0] - (a[0] + t * vx), p[1] - (a[1] + t * vy));
+}
+
+// an edge is allowed if it isn't a duplicate and doesn't pass
+// through (or too close to) any other dot
+function edgeOK(nodes, edges, a, b) {
+  if (a === b) return false;
+  for (const [x, y] of edges) {
+    if ((x === a && y === b) || (x === b && y === a)) return false;
+  }
+  for (let i = 0; i < nodes.length; i++) {
+    if (i === a || i === b) continue;
+    if (pointSegDist(nodes[i], nodes[a], nodes[b]) < 26) return false;
+  }
+  return true;
+}
+
+function tryGenerateShape(nNodes, targetEdges) {
+  // 1. scatter the dots (not too close together)
+  const nodes = [];
+  const minGap = nNodes <= 5 ? 95 : 78;
+  for (let i = 0; i < nNodes; i++) {
+    let placed = false;
+    for (let t = 0; t < 300; t++) {
+      const p = [60 + Math.random() * 280, 60 + Math.random() * 280];
+      if (nodes.every(q => dist(p, q) >= minGap)) { nodes.push(p); placed = true; break; }
+    }
+    if (!placed) return null;
+  }
+
+  // 2. connect everything (random spanning tree)
+  const edges = [];
+  const order = shuffle([...Array(nNodes).keys()]);
+  for (let i = 1; i < nNodes; i++) {
+    let done = false;
+    for (const c of shuffle(order.slice(0, i))) {
+      if (edgeOK(nodes, edges, order[i], c)) { edges.push([order[i], c]); done = true; break; }
+    }
+    if (!done) return null;
+  }
+
+  // 3. add extra lines for difficulty
+  let guard = 0;
+  while (edges.length < targetEdges && guard++ < 400) {
+    const a = Math.floor(Math.random() * nNodes);
+    const b = Math.floor(Math.random() * nNodes);
+    if (edgeOK(nodes, edges, a, b)) edges.push([a, b]);
+  }
+
+  // 4. fix the maths: keep adding lines between odd dots
+  //    until only 0 or 2 odd dots remain (Euler's rule)
+  const degrees = () => {
+    const d = Array(nNodes).fill(0);
+    edges.forEach(([a, b]) => { d[a]++; d[b]++; });
+    return d;
+  };
+  for (let fix = 0; fix < 20; fix++) {
+    const d = degrees();
+    const odd = [...Array(nNodes).keys()].filter(i => d[i] % 2 === 1);
+    if (odd.length <= 2) break;
+    let fixed = false;
+    const pairs = shuffle(odd.flatMap((x, i) => odd.slice(i + 1).map(y => [x, y])));
+    for (const [a, b] of pairs) {
+      if (edgeOK(nodes, edges, a, b)) { edges.push([a, b]); fixed = true; break; }
+    }
+    if (!fixed) return null;
+  }
+  const oddCount = degrees().filter(x => x % 2 === 1).length;
+  if (oddCount > 2) return null;
+
+  return {
+    nodes: nodes.map(p => [Math.round(p[0]), Math.round(p[1])]),
+    edges,
+    odd: oddCount,
+  };
+}
+
+const SHAPE_NAMES = ['The Squiggle', 'The Crystal', 'The Web', 'The Gem', 'The Tangle',
+  'The Zigzag', 'The Kite', 'The Snowflake', 'The Knot', 'The Comet',
+  'The Mega Tangle', 'The Spiderling', 'The Wobbler', 'The Doodlebeast'];
+
+// difficulty ramp: [dots, lines] — starts spicy, ends fiendish
+const LEVEL_CONFIGS = [[5, 6], [5, 7], [6, 8], [6, 10], [7, 11]];
+
+let LEVELS = [];
+
+function generateLevels() {
+  const names = shuffle(SHAPE_NAMES);
+  LEVELS = LEVEL_CONFIGS.map((cfg, i) => {
+    let shape = null;
+    for (let t = 0; t < 200 && !shape; t++) shape = tryGenerateShape(cfg[0], cfg[1]);
+    if (!shape) {
+      // emergency fallback (practically never needed)
+      shape = {
+        nodes: [[100, 100], [300, 100], [300, 300], [100, 300], [200, 200]],
+        edges: [[0, 1], [1, 2], [2, 3], [3, 0], [0, 4], [4, 2]],
+        odd: 2,
+      };
+    }
+    return {
+      name: names[i],
+      nodes: shape.nodes,
+      edges: shape.edges,
+      hint: shape.odd === 2
+        ? 'Count the lines at each dot — start at a dot with an ODD number of lines!'
+        : 'Every dot has an EVEN number of lines — start anywhere, and you’ll finish back where you began!',
+    };
+  });
+}
+
+const RAINBOW = ['#ff6b9d', '#ffa94d', '#ffd43b', '#69db7c', '#4dabf7', '#b197fc', '#f783ac', '#63e6be'];
+
+let levelIndex = 0;
+let usedEdges = new Set();
+let currentNode = null;
+
+function startPlay() {
+  sClick();
+  applyDistractions();
+  generateLevels();   // fresh, never-seen-before shapes every game
+  levelIndex = 0;
+  show('screen-play');
+  const ld = document.getElementById('levelDots');
+  ld.innerHTML = '';
+  for (let i = 0; i < LEVELS.length; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot';
+    d.id = 'ldot' + i;
+    ld.appendChild(d);
+  }
+  loadLevel();
+}
+
+function loadLevel() {
+  usedEdges = new Set();
+  currentNode = null;
+  document.getElementById('hintText').classList.add('hidden');
+  const lvl = LEVELS[levelIndex];
+  document.getElementById('levelTitle').textContent =
+    'Level ' + (levelIndex + 1) + ' of ' + LEVELS.length + ': ' + lvl.name;
+  drawBoard();
+}
+
+function drawBoard() {
+  const lvl = LEVELS[levelIndex];
+  const svg = document.getElementById('board');
+  svg.innerHTML = '';
+  const ns = 'http://www.w3.org/2000/svg';
+
+  // ghost edges (the ones still to draw)
+  lvl.edges.forEach((e, i) => {
+    if (usedEdges.has(i)) return;
+    const [a, b] = e;
+    const line = document.createElementNS(ns, 'line');
+    line.setAttribute('x1', lvl.nodes[a][0]); line.setAttribute('y1', lvl.nodes[a][1]);
+    line.setAttribute('x2', lvl.nodes[b][0]); line.setAttribute('y2', lvl.nodes[b][1]);
+    line.setAttribute('class', 'edge-ghost');
+    svg.appendChild(line);
+  });
+
+  // drawn edges in rainbow colours
+  let colorIdx = 0;
+  lvl.edges.forEach((e, i) => {
+    if (!usedEdges.has(i)) return;
+    const [a, b] = e;
+    const line = document.createElementNS(ns, 'line');
+    line.setAttribute('x1', lvl.nodes[a][0]); line.setAttribute('y1', lvl.nodes[a][1]);
+    line.setAttribute('x2', lvl.nodes[b][0]); line.setAttribute('y2', lvl.nodes[b][1]);
+    line.setAttribute('class', 'edge-drawn');
+    line.setAttribute('stroke', RAINBOW[colorIdx % RAINBOW.length]);
+    colorIdx++;
+    svg.appendChild(line);
+  });
+
+  // nodes (visible circle + bigger invisible hit area)
+  lvl.nodes.forEach((n, i) => {
+    const c = document.createElementNS(ns, 'circle');
+    c.setAttribute('cx', n[0]); c.setAttribute('cy', n[1]); c.setAttribute('r', 14);
+    c.setAttribute('class', 'node-circle' + (i === currentNode ? ' active' : ''));
+    svg.appendChild(c);
+
+    const hit = document.createElementNS(ns, 'circle');
+    hit.setAttribute('cx', n[0]); hit.setAttribute('cy', n[1]); hit.setAttribute('r', 30);
+    hit.setAttribute('class', 'node-hit');
+    hit.addEventListener('click', () => tapNode(i));
+    svg.appendChild(hit);
+  });
+}
+
+function findEdge(a, b) {
+  const lvl = LEVELS[levelIndex];
+  for (let i = 0; i < lvl.edges.length; i++) {
+    if (usedEdges.has(i)) continue;
+    const [x, y] = lvl.edges[i];
+    if ((x === a && y === b) || (x === b && y === a)) return i;
+  }
+  return -1;
+}
+
+function hasUnusedEdgeFrom(node) {
+  const lvl = LEVELS[levelIndex];
+  for (let i = 0; i < lvl.edges.length; i++) {
+    if (usedEdges.has(i)) continue;
+    if (lvl.edges[i][0] === node || lvl.edges[i][1] === node) return true;
+  }
+  return false;
+}
+
+function tapNode(i) {
+  const lvl = LEVELS[levelIndex];
+
+  if (currentNode === null) {
+    currentNode = i;
+    sClick();
+    drawBoard();
+    return;
+  }
+  if (i === currentNode) { sBoing(); return; }
+
+  const edgeIdx = findEdge(currentNode, i);
+  if (edgeIdx === -1) {
+    // not allowed: no unused line between those dots
+    sBoing();
+    const card = document.getElementById('card');
+    card.style.animation = 'shake 0.3s';
+    setTimeout(() => { card.style.animation = ''; }, 350);
+    return;
+  }
+
+  usedEdges.add(edgeIdx);
+  currentNode = i;
+  sClick();
+  drawBoard();
+
+  if (usedEdges.size === lvl.edges.length) {
+    levelComplete();
+  } else if (!hasUnusedEdgeFrom(currentNode)) {
+    // stuck — dead end
+    setTimeout(() => {
+      sBad();
+      document.getElementById('hintText').textContent =
+        '🪤 Dead end! You’ve got lines left but nowhere to go. Hit Restart and try a different route. ' + lvl.hint;
+      document.getElementById('hintText').classList.remove('hidden');
+    }, 300);
+  }
+}
+
+function levelComplete() {
+  sGood();
+  bigConfetti(50);
+  document.getElementById('ldot' + levelIndex).classList.add('done');
+  setTimeout(() => {
+    levelIndex++;
+    if (levelIndex < LEVELS.length) {
+      loadLevel();
+    } else {
+      winGame();
+    }
+  }, 1200);
+}
+
+function resetLevel() {
+  sClick();
+  loadLevel();
+}
+
+function showHint() {
+  sClick();
+  const ht = document.getElementById('hintText');
+  ht.textContent = '💡 ' + LEVELS[levelIndex].hint;
+  ht.classList.remove('hidden');
+}
+
+function winGame() {
+  sWin();
+  bigConfetti(140);
+  const right = NUM_QUESTIONS - wrongCount;
+  document.getElementById('winText').innerHTML =
+    'You beat all ' + LEVELS.length + ' shapes' +
+    (wrongCount >= 3 ? ' <strong>even with the screen going bananas</strong>' : '') +
+    '!<br>Maths score: ' + right + '/' + NUM_QUESTIONS + ' ⭐<br><br>' +
+    '<span style="font-size:0.9rem;">Secret: a shape is one-line-drawable when 0 or 2 dots have an odd number of lines. It’s called an Euler path. Tell your brother. 😏</span>';
+  show('screen-win');
+}
+
+/* ================= CONFETTI ================= */
+function bigConfetti(n) {
+  for (let i = 0; i < n; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.background = RAINBOW[Math.floor(Math.random() * RAINBOW.length)];
+    c.style.left = Math.random() * 100 + 'vw';
+    c.style.top = '-20px';
+    c.style.animationDuration = 1.5 + Math.random() * 2 + 's';
+    c.style.animationDelay = Math.random() * 0.5 + 's';
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 4500);
+  }
+}
+
+function miniConfetti(el) {
+  const r = el.getBoundingClientRect();
+  for (let i = 0; i < 10; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.background = RAINBOW[Math.floor(Math.random() * RAINBOW.length)];
+    c.style.left = (r.left + r.width / 2 + (Math.random() - 0.5) * 60) + 'px';
+    c.style.top = r.top + 'px';
+    c.style.animationDuration = 1 + Math.random() + 's';
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 2500);
+  }
+}
+</script>
+</body>
+</html>
